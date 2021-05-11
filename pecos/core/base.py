@@ -12,6 +12,7 @@ import copy
 import ctypes
 import logging
 import os
+from glob import glob
 from ctypes import (
     CDLL,
     CFUNCTYPE,
@@ -1297,4 +1298,17 @@ class corelib(object):
         return pred_alloc.get()
 
 
-clib = corelib(os.path.join(os.path.dirname(os.path.abspath(pecos.__file__)), "core"), "libpecos")
+def get_clib():
+    file_name = 'libpecos_float32.*.so'
+    clib_paths = [
+        os.path.join(os.path.dirname(os.path.abspath(pecos.__file__)), "core"),
+        '/pecos_lib/',
+    ]
+    for clib_path in clib_paths:
+        lib_pths = list(glob(os.path.join(clib_path, file_name)))
+        if lib_pths:
+            return corelib(clib_path, 'libpecos')
+    raise Exception('Could not load PECOS C++ library.')
+
+
+clib = get_clib()
