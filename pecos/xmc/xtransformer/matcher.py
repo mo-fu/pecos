@@ -449,29 +449,37 @@ class TransformerMatcher(pecos.BaseClass):
             )
         )
         t_start = time.time()
-        pool = mp.get_context("spawn").Pool(processes=num_workers)
-        async_results = [
-            pool.apply_async(
-                parallel_util.call_instance_method,
-                args=(
-                    self.text_tokenizer,
-                    self.text_tokenizer.batch_encode_plus.__name__,
-                    (),
-                    dict(
-                        convert_kwargs,
-                        batch_text_or_text_pairs=data_chunks[i],
-                    ),
-                ),
-            )
-            for i in range(num_workers)
-        ]
-        pool.close()
-        map(mp.pool.ApplyResult.get, async_results)
-        result_lists = [r.get() for r in async_results]
+        # pool = mp.get_context("spawn").Pool(processes=num_workers)
+        # async_results = [
+        #     pool.apply_async(
+        #         parallel_util.call_instance_method,
+        #         args=(
+        #             self.text_tokenizer,
+        #             self.text_tokenizer.batch_encode_plus.__name__,
+        #             (),
+        #             dict(
+        #                 convert_kwargs,
+        #                 batch_text_or_text_pairs=data_chunks[i],
+        #             ),
+        #         ),
+        #     )
+        #     for i in range(num_workers)
+        # ]
+        # pool.close()
+        # map(mp.pool.ApplyResult.get, async_results)
+        # result_lists = [r.get() for r in async_results]
+
+        result_lists = [
+            self.text_tokenizer.batch_encode_plus(
+                chunk,
+                **convert_kwargs
+                )
+            for chunk
+            in data_chunks
+            ]
 
         LOGGER.info("***** Finished with time cost={} *****".format(time.time() - t_start))
         feature_tensors = {}
-
         if len(result_lists) > 1:
             keys_ = [
                 ("input_ids", self.text_tokenizer.pad_token_id),
