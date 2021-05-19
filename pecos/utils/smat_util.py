@@ -773,7 +773,15 @@ class CsrEnsembler(object):
             print(Metrics.generate(Ytrue, ens(*pred_set), topk=topk))
 
 
-class Metrics(collections.namedtuple("Metrics", ["prec", "recall"])):
+def f_score(prec, recall, b=1):
+    b_sq = b*b
+    den = b_sq * prec + recall
+    if den == 0.0:
+        return den
+    return ((1+b_sq)*prec*recall)/den
+
+
+class Metrics(collections.namedtuple("Metrics", ["prec", "recall", "f1"])):
     """The metrics (precision, recall) for multi-label classification problems."""
 
     __slots__ = ()
@@ -789,7 +797,7 @@ class Metrics(collections.namedtuple("Metrics", ["prec", "recall"])):
     @classmethod
     def default(cls):
         """Default dummy metric"""
-        return cls(prec=[], recall=[])
+        return cls(prec=[], recall=[], f1=[])
 
     @classmethod
     def generate(cls, tY, pY, topk=10):
@@ -820,4 +828,5 @@ class Metrics(collections.namedtuple("Metrics", ["prec", "recall"])):
                 recall[len(cum_matched) :] += cum_matched[-1] / max(len(truth), 1)
         prec = total_matched / tY.shape[0] / np.arange(1, topk + 1)
         recall = recall / tY.shape[0]
-        return cls(prec=prec, recall=recall)
+        f1 = [f_score(p, r) for p,r in zip(prec, recall)]
+        return cls(prec=prec, recall=recall, f1=f1)
