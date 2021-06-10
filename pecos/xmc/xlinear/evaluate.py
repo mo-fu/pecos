@@ -13,6 +13,8 @@
 import argparse
 
 from pecos.utils import smat_util
+from sklearn.metrics import ndcg_score, f1_score, precision_score, recall_score
+from numpy import sqrt
 
 
 def parse_arguments():
@@ -52,9 +54,21 @@ def do_evaluation(args):
 
     Y_true = smat_util.load_matrix(args.truth_path).tocsr()
     Y_pred = smat_util.load_matrix(args.pred_path).tocsr()
+    print(Y_true.shape, Y_pred.shape)
     metric = smat_util.Metrics.generate(Y_true, Y_pred, args.topk)
     print("==== evaluation results ====")
     print(metric)
+    print(ndcg_score(Y_true.todense(), Y_pred.todense(), k=10))
+    Y_pred_norm = Y_pred.multiply(1/sqrt(Y_pred.multiply(Y_pred).sum(axis=1)))
+    Y_pred_norm.data = (Y_pred_norm.data + 1)/2.0
+    for t in range(45, 56):
+        t = t/100
+        cut_off_pred = Y_pred_norm > t
+        print('{}:\t{}\t{}\t{}'.format(
+            t,
+            f1_score(Y_true, cut_off_pred, average='samples'),
+            precision_score(Y_true, cut_off_pred, average='samples'),
+            recall_score(Y_true, cut_off_pred, average='samples')))
 
 
 if __name__ == "__main__":
